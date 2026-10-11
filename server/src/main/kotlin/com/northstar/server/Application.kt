@@ -1,7 +1,12 @@
 package com.northstar.server
 
+import com.northstar.server.auth.ExposedUserAuthRepository
+import com.northstar.server.auth.GetCurrentUserUseCase
+import com.northstar.server.auth.LoginUserUseCase
+import com.northstar.server.auth.RegisterUserUseCase
 import com.northstar.server.config.AppConfig
 import com.northstar.server.db.DatabaseFactory
+import com.northstar.server.plugins.configureAuth
 import com.northstar.server.plugins.configureFlyway
 import com.northstar.server.plugins.configureRouting
 import io.ktor.serialization.kotlinx.json.json
@@ -35,5 +40,12 @@ fun Application.module() {
     }
     configureFlyway()
     DatabaseFactory.init()
+
+    val userAuthRepository = ExposedUserAuthRepository()
+    val registerUserUseCase = RegisterUserUseCase(userAuthRepository)
+    val loginUserUseCase = LoginUserUseCase(userAuthRepository)
+    val getCurrentUserUseCase = GetCurrentUserUseCase(userAuthRepository)
+
+    configureAuth(registerUserUseCase, loginUserUseCase, getCurrentUserUseCase)
     configureRouting()
 }

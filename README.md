@@ -44,3 +44,12 @@ curl http://127.0.0.1:8080/
 ```bash
 docker exec -it north-star-db psql -U northstar_user -d northstar -c "\dt"
 ```
+
+## Авторизация
+
+- `POST /api/auth/register` — логин, почта, пароль → статус «Ожидает»
+- `POST /api/auth/login` — логин и пароль
+- `GET /api/auth/me` — профиль (JWT)
+- `POST /api/auth/logout`
+
+Демо-админ (после миграции V2): логин `admin`, пароль `admin123`.
