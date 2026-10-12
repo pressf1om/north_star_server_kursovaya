@@ -9,6 +9,9 @@ import com.northstar.server.db.DatabaseFactory
 import com.northstar.server.plugins.configureAuth
 import com.northstar.server.plugins.configureFlyway
 import com.northstar.server.plugins.configureRouting
+import com.northstar.server.applications.CreateApplicationUseCase
+import com.northstar.server.applications.ExposedApplicationRepository
+import com.northstar.server.applications.configureApplicationRoutes
 import com.northstar.server.cars.ExposedCarAdminRepository
 import com.northstar.server.cars.CreateCarUseCase
 import com.northstar.server.cars.ListCarsUseCase
@@ -64,6 +67,10 @@ fun Application.module() {
     val createCarUseCase = CreateCarUseCase(carAdminRepository)
     configureUserRoutes(listUsersUseCase, updateUserRoleUseCase)
     configureCarRoutes(listCarsUseCase, createCarUseCase)
+
+    val applicationRepository = ExposedApplicationRepository()
+    val createApplicationUseCase = CreateApplicationUseCase(applicationRepository)
+    configureApplicationRoutes(createApplicationUseCase)
 
     configureRouting()
 }
