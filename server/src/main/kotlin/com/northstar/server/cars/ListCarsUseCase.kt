@@ -6,10 +6,10 @@ import com.northstar.server.users.ForbiddenException
 class ListCarsUseCase(
     private val carAdminRepository: CarAdminRepository,
 ) {
-    suspend fun execute(callerStatus: String): CarsListResponse {
+    suspend fun execute(callerStatus: String, statusFilter: String? = null): CarsListResponse {
         if (callerStatus != UserStatus.ADMIN && callerStatus != UserStatus.DISPATCHER) {
             throw ForbiddenException()
         }
-        return CarsListResponse(carAdminRepository.listAll())
+        return CarsListResponse(carAdminRepository.listAll(statusFilter))
     }
 }

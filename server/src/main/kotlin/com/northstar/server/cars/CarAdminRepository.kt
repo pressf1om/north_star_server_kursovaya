@@ -13,7 +13,7 @@ import java.time.Instant
 class CarNumberAlreadyExistsException(val carNumber: String) : RuntimeException("Номер уже есть в парке")
 
 interface CarAdminRepository {
-    suspend fun listAll(): List<CarPublicDto>
+    suspend fun listAll(status: String? = null): List<CarPublicDto>
     suspend fun findById(id: Int): CarPublicDto?
     suspend fun create(carNumber: String, model: String): CarPublicDto
     suspend fun clearDriverFromAllCars(driverUserId: Int)
@@ -22,8 +22,13 @@ interface CarAdminRepository {
 
 class ExposedCarAdminRepository : CarAdminRepository {
 
-    override suspend fun listAll(): List<CarPublicDto> = newSuspendedTransaction(Dispatchers.IO) {
-        CarsTable.selectAll()
+    override suspend fun listAll(status: String?): List<CarPublicDto> = newSuspendedTransaction(Dispatchers.IO) {
+        val base = if (status != null) {
+            CarsTable.selectAll().where { CarsTable.status eq status }
+        } else {
+            CarsTable.selectAll()
+        }
+        base
             .orderBy(CarsTable.id, SortOrder.ASC)
             .map { row ->
                 CarPublicDto(

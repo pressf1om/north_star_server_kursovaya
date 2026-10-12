@@ -24,7 +24,8 @@ fun Application.configureCarRoutes(
                 val principal = call.principal<UserPrincipal>()
                     ?: return@get call.respond(HttpStatusCode.Unauthorized)
                 try {
-                    call.respond(listCarsUseCase.execute(principal.status))
+                    val status = call.request.queryParameters["status"]
+                    call.respond(listCarsUseCase.execute(principal.status, status))
                 } catch (_: ForbiddenException) {
                     call.respond(
                         HttpStatusCode.Forbidden,
