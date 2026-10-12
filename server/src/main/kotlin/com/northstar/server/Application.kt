@@ -9,6 +9,9 @@ import com.northstar.server.db.DatabaseFactory
 import com.northstar.server.plugins.configureAuth
 import com.northstar.server.plugins.configureFlyway
 import com.northstar.server.plugins.configureRouting
+import com.northstar.server.users.ExposedUserAdminRepository
+import com.northstar.server.users.ListUsersUseCase
+import com.northstar.server.users.configureUserRoutes
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -47,5 +50,10 @@ fun Application.module() {
     val getCurrentUserUseCase = GetCurrentUserUseCase(userAuthRepository)
 
     configureAuth(registerUserUseCase, loginUserUseCase, getCurrentUserUseCase)
+
+    val userAdminRepository = ExposedUserAdminRepository()
+    val listUsersUseCase = ListUsersUseCase(userAdminRepository)
+    configureUserRoutes(listUsersUseCase)
+
     configureRouting()
 }
