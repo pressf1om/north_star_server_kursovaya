@@ -9,8 +9,12 @@ import com.northstar.server.db.DatabaseFactory
 import com.northstar.server.plugins.configureAuth
 import com.northstar.server.plugins.configureFlyway
 import com.northstar.server.plugins.configureRouting
+import com.northstar.server.cars.ExposedCarAdminRepository
+import com.northstar.server.cars.ListCarsUseCase
+import com.northstar.server.cars.configureCarRoutes
 import com.northstar.server.users.ExposedUserAdminRepository
 import com.northstar.server.users.ListUsersUseCase
+import com.northstar.server.users.UpdateUserRoleUseCase
 import com.northstar.server.users.configureUserRoutes
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -52,8 +56,12 @@ fun Application.module() {
     configureAuth(registerUserUseCase, loginUserUseCase, getCurrentUserUseCase)
 
     val userAdminRepository = ExposedUserAdminRepository()
+    val carAdminRepository = ExposedCarAdminRepository()
     val listUsersUseCase = ListUsersUseCase(userAdminRepository)
-    configureUserRoutes(listUsersUseCase)
+    val updateUserRoleUseCase = UpdateUserRoleUseCase(userAdminRepository, carAdminRepository)
+    val listCarsUseCase = ListCarsUseCase(carAdminRepository)
+    configureUserRoutes(listUsersUseCase, updateUserRoleUseCase)
+    configureCarRoutes(listCarsUseCase)
 
     configureRouting()
 }
