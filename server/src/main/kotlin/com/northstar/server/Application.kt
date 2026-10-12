@@ -14,6 +14,9 @@ import com.northstar.server.applications.DeleteApplicationUseCase
 import com.northstar.server.applications.GetApplicationByCarUseCase
 import com.northstar.server.applications.ListApplicationsUseCase
 import com.northstar.server.applications.UpdateApplicationStatusUseCase
+import com.northstar.server.applications.ExposedCompletedApplicationRepository
+import com.northstar.server.applications.ListCompletedApplicationsUseCase
+import com.northstar.server.applications.configureCompletedApplicationRoutes
 import com.northstar.server.applications.ExposedApplicationRepository
 import com.northstar.server.applications.configureApplicationRoutes
 import com.northstar.server.cars.ExposedCarAdminRepository
@@ -88,6 +91,13 @@ fun Application.module() {
         getApplicationByCarUseCase,
         updateApplicationStatusUseCase,
     )
+
+    val completedApplicationRepository = ExposedCompletedApplicationRepository()
+    val listCompletedApplicationsUseCase = ListCompletedApplicationsUseCase(
+        completedApplicationRepository,
+        userAuthRepository,
+    )
+    configureCompletedApplicationRoutes(listCompletedApplicationsUseCase)
 
     configureRouting()
 }
