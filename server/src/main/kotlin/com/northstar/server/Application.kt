@@ -10,6 +10,8 @@ import com.northstar.server.plugins.configureAuth
 import com.northstar.server.plugins.configureFlyway
 import com.northstar.server.plugins.configureRouting
 import com.northstar.server.applications.CreateApplicationUseCase
+import com.northstar.server.applications.DeleteApplicationUseCase
+import com.northstar.server.applications.GetApplicationByCarUseCase
 import com.northstar.server.applications.ListApplicationsUseCase
 import com.northstar.server.applications.ExposedApplicationRepository
 import com.northstar.server.applications.configureApplicationRoutes
@@ -72,7 +74,14 @@ fun Application.module() {
     val applicationRepository = ExposedApplicationRepository()
     val createApplicationUseCase = CreateApplicationUseCase(applicationRepository)
     val listApplicationsUseCase = ListApplicationsUseCase(applicationRepository)
-    configureApplicationRoutes(createApplicationUseCase, listApplicationsUseCase)
+    val deleteApplicationUseCase = DeleteApplicationUseCase(applicationRepository)
+    val getApplicationByCarUseCase = GetApplicationByCarUseCase(applicationRepository, userAuthRepository)
+    configureApplicationRoutes(
+        createApplicationUseCase,
+        listApplicationsUseCase,
+        deleteApplicationUseCase,
+        getApplicationByCarUseCase,
+    )
 
     configureRouting()
 }

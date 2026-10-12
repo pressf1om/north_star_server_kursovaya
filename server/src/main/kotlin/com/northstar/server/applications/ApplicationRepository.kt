@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -18,9 +19,37 @@ class CarNotAvailableException : RuntimeException("Машина недоступ
 interface ApplicationRepository {
     suspend fun createAssigned(request: CreateApplicationRequest): ApplicationDto
     suspend fun listCurrent(): List<ApplicationDto>
+    suspend fun findByCarNumber(carNumber: String): ApplicationDto?
+    suspend fun deleteById(id: Int): Boolean
 }
 
 class ExposedApplicationRepository : ApplicationRepository {
+
+    override suspend fun findByCarNumber(carNumber: String): ApplicationDto? =
+        newSuspendedTransaction(Dispatchers.IO) {
+            ApplicationsTable.selectAll()
+                .where { ApplicationsTable.carNow eq carNumber.trim() }
+                .limit(1)
+                .firstOrNull()
+                ?.toApplicationDto()
+        }
+
+    override suspend fun deleteById(id: Int): Boolean = newSuspendedTransaction(Dispatchers.IO) {
+        val row = ApplicationsTable.selectAll()
+            .where { ApplicationsTable.id eq id }
+            .limit(1)
+            .firstOrNull()
+            ?: return@newSuspendedTransaction false
+
+        val carNumber = row[ApplicationsTable.carNow]
+        ApplicationsTable.deleteWhere { ApplicationsTable.id eq id }
+        if (!carNumber.isNullOrBlank()) {
+            CarsTable.update({ CarsTable.carNumber eq carNumber }) {
+                it[CarsTable.status] = CarStatus.FREE
+            }
+        }
+        true
+    }
 
     override suspend fun listCurrent(): List<ApplicationDto> = newSuspendedTransaction(Dispatchers.IO) {
         ApplicationsTable.selectAll()
