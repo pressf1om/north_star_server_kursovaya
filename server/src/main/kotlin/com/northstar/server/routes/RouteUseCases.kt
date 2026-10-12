@@ -7,7 +7,7 @@ class ListRoutesUseCase(
     private val routeRepository: RouteRepository,
 ) {
     suspend fun execute(callerStatus: String): RoutesListResponse {
-        if (callerStatus != UserStatus.ADMIN) {
+        if (callerStatus != UserStatus.ADMIN && callerStatus != UserStatus.DISPATCHER) {
             throw ForbiddenException()
         }
         return RoutesListResponse(routeRepository.listAll())

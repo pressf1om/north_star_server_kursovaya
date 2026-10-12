@@ -29,6 +29,11 @@ import com.northstar.server.routesettings.ExposedRouteSettingsRepository
 import com.northstar.server.routesettings.GetRouteSettingsUseCase
 import com.northstar.server.routesettings.UpdateRouteSettingsUseCase
 import com.northstar.server.routesettings.configureRouteSettingsRoutes
+import com.northstar.server.analytics.ClearAnalyticsUseCase
+import com.northstar.server.analytics.CreateAnalyticsVariantUseCase
+import com.northstar.server.analytics.ExposedAnalyticsRepository
+import com.northstar.server.analytics.ListAnalyticsUseCase
+import com.northstar.server.analytics.configureAnalyticsRoutes
 import com.northstar.server.applications.ExposedApplicationRepository
 import com.northstar.server.applications.configureApplicationRoutes
 import com.northstar.server.cars.ExposedCarAdminRepository
@@ -125,6 +130,24 @@ fun Application.module() {
     val getRouteSettingsUseCase = GetRouteSettingsUseCase(routeSettingsRepository)
     val updateRouteSettingsUseCase = UpdateRouteSettingsUseCase(routeSettingsRepository)
     configureRouteSettingsRoutes(getRouteSettingsUseCase, updateRouteSettingsUseCase)
+
+    val analyticsRepository = ExposedAnalyticsRepository()
+    val listAnalyticsUseCase = ListAnalyticsUseCase(
+        analyticsRepository,
+        routeRepository,
+        routeSettingsRepository,
+    )
+    val createAnalyticsVariantUseCase = CreateAnalyticsVariantUseCase(
+        analyticsRepository,
+        routeRepository,
+        routeSettingsRepository,
+    )
+    val clearAnalyticsUseCase = ClearAnalyticsUseCase(analyticsRepository)
+    configureAnalyticsRoutes(
+        listAnalyticsUseCase,
+        createAnalyticsVariantUseCase,
+        clearAnalyticsUseCase,
+    )
 
     configureRouting()
 }

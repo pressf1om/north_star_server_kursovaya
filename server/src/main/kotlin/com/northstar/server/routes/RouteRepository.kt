@@ -7,11 +7,13 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 
 interface RouteRepository {
     suspend fun listAll(): List<RouteDto>
+    suspend fun findById(id: Int): RouteDto?
     suspend fun create(request: CreateRouteRequest): RouteDto
 }
 
@@ -21,6 +23,14 @@ class ExposedRouteRepository : RouteRepository {
         RoutesTable.selectAll()
             .orderBy(RoutesTable.id, SortOrder.ASC)
             .map { it.toRouteDto() }
+    }
+
+    override suspend fun findById(id: Int): RouteDto? = newSuspendedTransaction(Dispatchers.IO) {
+        RoutesTable.selectAll()
+            .where { RoutesTable.id eq id }
+            .limit(1)
+            .firstOrNull()
+            ?.toRouteDto()
     }
 
     override suspend fun create(request: CreateRouteRequest): RouteDto =
