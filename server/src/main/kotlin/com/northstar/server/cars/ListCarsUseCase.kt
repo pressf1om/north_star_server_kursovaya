@@ -7,7 +7,7 @@ class ListCarsUseCase(
     private val carAdminRepository: CarAdminRepository,
 ) {
     suspend fun execute(callerStatus: String): CarsListResponse {
-        if (callerStatus != UserStatus.ADMIN) {
+        if (callerStatus != UserStatus.ADMIN && callerStatus != UserStatus.DISPATCHER) {
             throw ForbiddenException()
         }
         return CarsListResponse(carAdminRepository.listAll())

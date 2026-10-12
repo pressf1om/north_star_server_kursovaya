@@ -14,3 +14,9 @@ data class CarPublicDto(
 data class CarsListResponse(
     val cars: List<CarPublicDto>,
 )
+
+@Serializable
+data class CreateCarRequest(
+    val carNumber: String,
+    val model: String,
+)

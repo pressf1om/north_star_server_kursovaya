@@ -10,6 +10,7 @@ import com.northstar.server.plugins.configureAuth
 import com.northstar.server.plugins.configureFlyway
 import com.northstar.server.plugins.configureRouting
 import com.northstar.server.cars.ExposedCarAdminRepository
+import com.northstar.server.cars.CreateCarUseCase
 import com.northstar.server.cars.ListCarsUseCase
 import com.northstar.server.cars.configureCarRoutes
 import com.northstar.server.users.ExposedUserAdminRepository
@@ -60,8 +61,9 @@ fun Application.module() {
     val listUsersUseCase = ListUsersUseCase(userAdminRepository)
     val updateUserRoleUseCase = UpdateUserRoleUseCase(userAdminRepository, carAdminRepository)
     val listCarsUseCase = ListCarsUseCase(carAdminRepository)
+    val createCarUseCase = CreateCarUseCase(carAdminRepository)
     configureUserRoutes(listUsersUseCase, updateUserRoleUseCase)
-    configureCarRoutes(listCarsUseCase)
+    configureCarRoutes(listCarsUseCase, createCarUseCase)
 
     configureRouting()
 }
