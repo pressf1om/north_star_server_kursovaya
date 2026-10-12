@@ -6,6 +6,8 @@ import com.northstar.server.db.ApplicationsTable
 import com.northstar.server.db.CarsTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -15,9 +17,16 @@ class CarNotAvailableException : RuntimeException("Машина недоступ
 
 interface ApplicationRepository {
     suspend fun createAssigned(request: CreateApplicationRequest): ApplicationDto
+    suspend fun listCurrent(): List<ApplicationDto>
 }
 
 class ExposedApplicationRepository : ApplicationRepository {
+
+    override suspend fun listCurrent(): List<ApplicationDto> = newSuspendedTransaction(Dispatchers.IO) {
+        ApplicationsTable.selectAll()
+            .orderBy(ApplicationsTable.id, SortOrder.ASC)
+            .map { it.toApplicationDto() }
+    }
 
     override suspend fun createAssigned(request: CreateApplicationRequest): ApplicationDto =
         newSuspendedTransaction(Dispatchers.IO) {
@@ -79,4 +88,15 @@ class ExposedApplicationRepository : ApplicationRepository {
             throw ValidationException("Координаты $label: формат широта,долгота")
         }
     }
+
+    private fun ResultRow.toApplicationDto() = ApplicationDto(
+        id = this[ApplicationsTable.id],
+        coordStart = this[ApplicationsTable.coordStart],
+        coordEnd = this[ApplicationsTable.coordEnd],
+        dateOfStart = this[ApplicationsTable.dateOfStart],
+        dateOfEnd = this[ApplicationsTable.dateOfEnd],
+        status = this[ApplicationsTable.status],
+        weight = this[ApplicationsTable.weight],
+        carNow = this[ApplicationsTable.carNow],
+    )
 }

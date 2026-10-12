@@ -10,12 +10,29 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 
-fun Application.configureApplicationRoutes(createApplicationUseCase: CreateApplicationUseCase) {
+fun Application.configureApplicationRoutes(
+    createApplicationUseCase: CreateApplicationUseCase,
+    listApplicationsUseCase: ListApplicationsUseCase,
+) {
     routing {
         authenticate("auth-jwt") {
+            get("/api/applications") {
+                val principal = call.principal<UserPrincipal>()
+                    ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    call.respond(listApplicationsUseCase.execute(principal.status))
+                } catch (_: ForbiddenException) {
+                    call.respond(
+                        HttpStatusCode.Forbidden,
+                        mapOf("error" to "forbidden", "message" to "Недостаточно прав"),
+                    )
+                }
+            }
+
             post("/api/applications") {
                 val principal = call.principal<UserPrincipal>()
                     ?: return@post call.respond(HttpStatusCode.Unauthorized)

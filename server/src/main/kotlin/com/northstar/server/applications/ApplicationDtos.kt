@@ -12,6 +12,11 @@ data class CreateApplicationRequest(
 )
 
 @Serializable
+data class ApplicationsListResponse(
+    val applications: List<ApplicationDto>,
+)
+
+@Serializable
 data class ApplicationDto(
     val id: Int,
     val coordStart: String,
