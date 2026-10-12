@@ -25,6 +25,10 @@ import com.northstar.server.routes.CreateRouteUseCase
 import com.northstar.server.routes.ExposedRouteRepository
 import com.northstar.server.routes.ListRoutesUseCase
 import com.northstar.server.routes.configureRouteRoutes
+import com.northstar.server.routesettings.ExposedRouteSettingsRepository
+import com.northstar.server.routesettings.GetRouteSettingsUseCase
+import com.northstar.server.routesettings.UpdateRouteSettingsUseCase
+import com.northstar.server.routesettings.configureRouteSettingsRoutes
 import com.northstar.server.applications.ExposedApplicationRepository
 import com.northstar.server.applications.configureApplicationRoutes
 import com.northstar.server.cars.ExposedCarAdminRepository
@@ -116,6 +120,11 @@ fun Application.module() {
     val listRoutesUseCase = ListRoutesUseCase(routeRepository)
     val createRouteUseCase = CreateRouteUseCase(routeRepository)
     configureRouteRoutes(listRoutesUseCase, createRouteUseCase)
+
+    val routeSettingsRepository = ExposedRouteSettingsRepository()
+    val getRouteSettingsUseCase = GetRouteSettingsUseCase(routeSettingsRepository)
+    val updateRouteSettingsUseCase = UpdateRouteSettingsUseCase(routeSettingsRepository)
+    configureRouteSettingsRoutes(getRouteSettingsUseCase, updateRouteSettingsUseCase)
 
     configureRouting()
 }
