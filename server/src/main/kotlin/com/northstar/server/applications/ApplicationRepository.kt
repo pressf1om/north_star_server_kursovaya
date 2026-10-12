@@ -4,6 +4,7 @@ import com.northstar.server.auth.ValidationException
 import com.northstar.server.cars.CarStatus
 import com.northstar.server.db.ApplicationsTable
 import com.northstar.server.db.CarsTable
+import com.northstar.server.db.CompletedApplicationsTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.ResultRow
@@ -19,11 +20,21 @@ class CarNotAvailableException : RuntimeException("Машина недоступ
 interface ApplicationRepository {
     suspend fun createAssigned(request: CreateApplicationRequest): ApplicationDto
     suspend fun listCurrent(): List<ApplicationDto>
+    suspend fun findById(id: Int): ApplicationDto?
     suspend fun findByCarNumber(carNumber: String): ApplicationDto?
     suspend fun deleteById(id: Int): Boolean
+    suspend fun updateStatus(id: Int, newStatus: String): ApplicationDto?
 }
 
 class ExposedApplicationRepository : ApplicationRepository {
+
+    override suspend fun findById(id: Int): ApplicationDto? = newSuspendedTransaction(Dispatchers.IO) {
+        ApplicationsTable.selectAll()
+            .where { ApplicationsTable.id eq id }
+            .limit(1)
+            .firstOrNull()
+            ?.toApplicationDto()
+    }
 
     override suspend fun findByCarNumber(carNumber: String): ApplicationDto? =
         newSuspendedTransaction(Dispatchers.IO) {
@@ -50,6 +61,51 @@ class ExposedApplicationRepository : ApplicationRepository {
         }
         true
     }
+
+    override suspend fun updateStatus(id: Int, newStatus: String): ApplicationDto? =
+        newSuspendedTransaction(Dispatchers.IO) {
+            val row = ApplicationsTable.selectAll()
+                .where { ApplicationsTable.id eq id }
+                .limit(1)
+                .firstOrNull()
+                ?: return@newSuspendedTransaction null
+
+            val carNumber = row[ApplicationsTable.carNow]
+
+            if (newStatus == ApplicationStatus.FREE) {
+                CompletedApplicationsTable.insert {
+                    it[coordStart] = row[ApplicationsTable.coordStart]
+                    it[coordEnd] = row[ApplicationsTable.coordEnd]
+                    it[dateOfStart] = row[ApplicationsTable.dateOfStart]
+                    it[dateOfEnd] = row[ApplicationsTable.dateOfEnd]
+                    it[status] = ApplicationStatus.FREE
+                    it[weight] = row[ApplicationsTable.weight]
+                    it[carNow] = carNumber
+                }
+                ApplicationsTable.deleteWhere { ApplicationsTable.id eq id }
+                if (!carNumber.isNullOrBlank()) {
+                    CarsTable.update({ CarsTable.carNumber eq carNumber }) {
+                        it[CarsTable.status] = CarStatus.FREE
+                    }
+                }
+                return@newSuspendedTransaction null
+            }
+
+            ApplicationsTable.update({ ApplicationsTable.id eq id }) {
+                it[ApplicationsTable.status] = newStatus
+            }
+            if (!carNumber.isNullOrBlank()) {
+                CarsTable.update({ CarsTable.carNumber eq carNumber }) {
+                    it[CarsTable.status] = newStatus
+                }
+            }
+
+            ApplicationsTable.selectAll()
+                .where { ApplicationsTable.id eq id }
+                .limit(1)
+                .firstOrNull()
+                ?.toApplicationDto()
+        }
 
     override suspend fun listCurrent(): List<ApplicationDto> = newSuspendedTransaction(Dispatchers.IO) {
         ApplicationsTable.selectAll()

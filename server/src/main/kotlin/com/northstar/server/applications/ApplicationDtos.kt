@@ -3,6 +3,17 @@ package com.northstar.server.applications
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class UpdateApplicationStatusRequest(
+    val status: String,
+)
+
+@Serializable
+data class UpdateApplicationStatusResponse(
+    val archived: Boolean,
+    val application: ApplicationDto? = null,
+)
+
+@Serializable
 data class CreateApplicationRequest(
     val coordStart: String,
     val coordEnd: String,

@@ -13,6 +13,7 @@ import com.northstar.server.applications.CreateApplicationUseCase
 import com.northstar.server.applications.DeleteApplicationUseCase
 import com.northstar.server.applications.GetApplicationByCarUseCase
 import com.northstar.server.applications.ListApplicationsUseCase
+import com.northstar.server.applications.UpdateApplicationStatusUseCase
 import com.northstar.server.applications.ExposedApplicationRepository
 import com.northstar.server.applications.configureApplicationRoutes
 import com.northstar.server.cars.ExposedCarAdminRepository
@@ -76,11 +77,16 @@ fun Application.module() {
     val listApplicationsUseCase = ListApplicationsUseCase(applicationRepository)
     val deleteApplicationUseCase = DeleteApplicationUseCase(applicationRepository)
     val getApplicationByCarUseCase = GetApplicationByCarUseCase(applicationRepository, userAuthRepository)
+    val updateApplicationStatusUseCase = UpdateApplicationStatusUseCase(
+        applicationRepository,
+        userAuthRepository,
+    )
     configureApplicationRoutes(
         createApplicationUseCase,
         listApplicationsUseCase,
         deleteApplicationUseCase,
         getApplicationByCarUseCase,
+        updateApplicationStatusUseCase,
     )
 
     configureRouting()
