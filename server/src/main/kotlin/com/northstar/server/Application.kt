@@ -21,6 +21,10 @@ import com.northstar.server.drivermessages.CreateDriverMessageUseCase
 import com.northstar.server.drivermessages.ExposedDriverMessageRepository
 import com.northstar.server.drivermessages.ListDriverMessagesUseCase
 import com.northstar.server.drivermessages.configureDriverMessageRoutes
+import com.northstar.server.routes.CreateRouteUseCase
+import com.northstar.server.routes.ExposedRouteRepository
+import com.northstar.server.routes.ListRoutesUseCase
+import com.northstar.server.routes.configureRouteRoutes
 import com.northstar.server.applications.ExposedApplicationRepository
 import com.northstar.server.applications.configureApplicationRoutes
 import com.northstar.server.cars.ExposedCarAdminRepository
@@ -107,6 +111,11 @@ fun Application.module() {
     val createDriverMessageUseCase = CreateDriverMessageUseCase(driverMessageRepository, userAuthRepository)
     val listDriverMessagesUseCase = ListDriverMessagesUseCase(driverMessageRepository)
     configureDriverMessageRoutes(createDriverMessageUseCase, listDriverMessagesUseCase)
+
+    val routeRepository = ExposedRouteRepository()
+    val listRoutesUseCase = ListRoutesUseCase(routeRepository)
+    val createRouteUseCase = CreateRouteUseCase(routeRepository)
+    configureRouteRoutes(listRoutesUseCase, createRouteUseCase)
 
     configureRouting()
 }
