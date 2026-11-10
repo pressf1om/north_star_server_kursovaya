@@ -6,6 +6,7 @@ object DriverMessagesTable : Table("driver_messages") {
     val id = integer("id").autoIncrement()
     val message = varchar("message", 5000)
     val carNumber = varchar("car_number", 20)
+    val reply = varchar("reply", 5000).nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

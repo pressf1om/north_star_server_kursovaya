@@ -8,11 +8,14 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.update
 
 interface DriverMessageRepository {
     suspend fun create(message: String, carNumber: String): DriverMessageDto
     suspend fun listAll(): List<DriverMessageDto>
     suspend fun listByCar(carNumber: String): List<DriverMessageDto>
+    suspend fun findById(id: Int): DriverMessageDto?
+    suspend fun reply(id: Int, reply: String): DriverMessageDto?
 }
 
 class ExposedDriverMessageRepository : DriverMessageRepository {
@@ -23,7 +26,7 @@ class ExposedDriverMessageRepository : DriverMessageRepository {
                 it[DriverMessagesTable.message] = message
                 it[DriverMessagesTable.carNumber] = carNumber
             }[DriverMessagesTable.id]
-            DriverMessageDto(id = id, message = message, carNumber = carNumber)
+            DriverMessageDto(id = id, message = message, carNumber = carNumber, reply = null)
         }
 
     override suspend fun listAll(): List<DriverMessageDto> = newSuspendedTransaction(Dispatchers.IO) {
@@ -40,9 +43,34 @@ class ExposedDriverMessageRepository : DriverMessageRepository {
                 .map { it.toDto() }
         }
 
+    override suspend fun findById(id: Int): DriverMessageDto? = newSuspendedTransaction(Dispatchers.IO) {
+        DriverMessagesTable.selectAll()
+            .where { DriverMessagesTable.id eq id }
+            .limit(1)
+            .firstOrNull()
+            ?.toDto()
+    }
+
+    override suspend fun reply(id: Int, reply: String): DriverMessageDto? =
+        newSuspendedTransaction(Dispatchers.IO) {
+            val updated = DriverMessagesTable.update({ DriverMessagesTable.id eq id }) {
+                it[DriverMessagesTable.reply] = reply
+            }
+            if (updated == 0) {
+                null
+            } else {
+                DriverMessagesTable.selectAll()
+                    .where { DriverMessagesTable.id eq id }
+                    .limit(1)
+                    .firstOrNull()
+                    ?.toDto()
+            }
+        }
+
     private fun ResultRow.toDto() = DriverMessageDto(
         id = this[DriverMessagesTable.id],
         message = this[DriverMessagesTable.message],
         carNumber = this[DriverMessagesTable.carNumber],
+        reply = this[DriverMessagesTable.reply],
     )
 }

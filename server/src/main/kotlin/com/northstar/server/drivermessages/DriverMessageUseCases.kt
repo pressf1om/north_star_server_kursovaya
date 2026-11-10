@@ -5,6 +5,8 @@ import com.northstar.server.auth.UserStatus
 import com.northstar.server.auth.ValidationException
 import com.northstar.server.users.ForbiddenException
 
+class DriverMessageNotFoundException : RuntimeException("Сообщение не найдено")
+
 class CreateDriverMessageUseCase(
     private val driverMessageRepository: DriverMessageRepository,
     private val userAuthRepository: UserAuthRepository,
@@ -43,16 +45,57 @@ class CreateDriverMessageUseCase(
 
 class ListDriverMessagesUseCase(
     private val driverMessageRepository: DriverMessageRepository,
+    private val userAuthRepository: UserAuthRepository,
 ) {
-    suspend fun execute(callerStatus: String, carNumber: String?): DriverMessagesListResponse {
+    suspend fun execute(
+        callerStatus: String,
+        callerUserId: Int,
+        carNumber: String?,
+    ): DriverMessagesListResponse {
+        when (callerStatus) {
+            UserStatus.ADMIN, UserStatus.DISPATCHER -> {
+                val items = if (carNumber.isNullOrBlank()) {
+                    driverMessageRepository.listAll()
+                } else {
+                    driverMessageRepository.listByCar(carNumber.trim())
+                }
+                return DriverMessagesListResponse(items)
+            }
+            UserStatus.DRIVER -> {
+                val driverCarNumber = userAuthRepository.findCarByDriverId(callerUserId)?.carNumber
+                    ?: throw ForbiddenException()
+                val requested = carNumber?.trim().orEmpty()
+                if (requested.isNotEmpty() && requested != driverCarNumber) {
+                    throw ForbiddenException()
+                }
+                return DriverMessagesListResponse(
+                    driverMessageRepository.listByCar(driverCarNumber),
+                )
+            }
+            else -> throw ForbiddenException()
+        }
+    }
+}
+
+class ReplyDriverMessageUseCase(
+    private val driverMessageRepository: DriverMessageRepository,
+) {
+    suspend fun execute(
+        callerStatus: String,
+        messageId: Int,
+        request: ReplyDriverMessageRequest,
+    ): DriverMessageDto {
         if (callerStatus != UserStatus.ADMIN && callerStatus != UserStatus.DISPATCHER) {
             throw ForbiddenException()
         }
-        val items = if (carNumber.isNullOrBlank()) {
-            driverMessageRepository.listAll()
-        } else {
-            driverMessageRepository.listByCar(carNumber.trim())
+        val text = request.reply.trim()
+        if (text.isEmpty()) {
+            throw ValidationException("Введите ответ")
         }
-        return DriverMessagesListResponse(items)
+        if (text.length > 5000) {
+            throw ValidationException("Ответ слишком длинный")
+        }
+        return driverMessageRepository.reply(messageId, text)
+            ?: throw DriverMessageNotFoundException()
     }
 }

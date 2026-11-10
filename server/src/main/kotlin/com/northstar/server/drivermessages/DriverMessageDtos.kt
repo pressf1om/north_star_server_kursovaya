@@ -9,10 +9,16 @@ data class CreateDriverMessageRequest(
 )
 
 @Serializable
+data class ReplyDriverMessageRequest(
+    val reply: String,
+)
+
+@Serializable
 data class DriverMessageDto(
     val id: Int,
     val message: String,
     val carNumber: String,
+    val reply: String? = null,
 )
 
 @Serializable

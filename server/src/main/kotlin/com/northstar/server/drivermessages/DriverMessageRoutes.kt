@@ -11,12 +11,14 @@ import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 
 fun Application.configureDriverMessageRoutes(
     createDriverMessageUseCase: CreateDriverMessageUseCase,
     listDriverMessagesUseCase: ListDriverMessagesUseCase,
+    replyDriverMessageUseCase: ReplyDriverMessageUseCase,
 ) {
     routing {
         authenticate("auth-jwt") {
@@ -52,6 +54,7 @@ fun Application.configureDriverMessageRoutes(
                     call.respond(
                         listDriverMessagesUseCase.execute(
                             callerStatus = principal.status,
+                            callerUserId = principal.userId,
                             carNumber = carNumber,
                         ),
                     )
@@ -59,6 +62,41 @@ fun Application.configureDriverMessageRoutes(
                     call.respond(
                         HttpStatusCode.Forbidden,
                         mapOf("error" to "forbidden", "message" to "Недостаточно прав"),
+                    )
+                }
+            }
+
+            patch("/api/driver-messages/{id}") {
+                val principal = call.principal<UserPrincipal>()
+                    ?: return@patch call.respond(HttpStatusCode.Unauthorized)
+                val id = call.parameters["id"]?.toIntOrNull()
+                    ?: return@patch call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "bad_request", "message" to "Некорректный id"),
+                    )
+                try {
+                    val request = call.receive<ReplyDriverMessageRequest>()
+                    call.respond(
+                        replyDriverMessageUseCase.execute(
+                            callerStatus = principal.status,
+                            messageId = id,
+                            request = request,
+                        ),
+                    )
+                } catch (_: ForbiddenException) {
+                    call.respond(
+                        HttpStatusCode.Forbidden,
+                        mapOf("error" to "forbidden", "message" to "Недостаточно прав"),
+                    )
+                } catch (e: ValidationException) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "validation_error", "message" to (e.message ?: "")),
+                    )
+                } catch (_: DriverMessageNotFoundException) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        mapOf("error" to "not_found", "message" to "Сообщение не найдено"),
                     )
                 }
             }
